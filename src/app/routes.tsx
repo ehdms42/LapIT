@@ -3,6 +3,7 @@ import Layout from './components/Layout'
 import Home from './pages/Home'
 import IonicConcept from './pages/IonicConcept'
 import IonicBonding from './pages/IonicBonding'
+import { CovalentConcept } from './pages/CovalentConcept'
 
 
 export default function AppRoutes() {
@@ -12,7 +13,7 @@ export default function AppRoutes() {
         <Route path="/" element={<Home />} />
         <Route path="/ionic-concept" element={<IonicConcept />} />
         <Route path="/ionic-lab" element={<IonicBonding />} />
-        <Route path="/covalent-concept" element={<div>공유 개념</div>} />
+        <Route path="/covalent-concept" element={<CovalentConcept />} />
         <Route path="/covalent-lab" element={<div>공유 실습</div>} />
         <Route path="/quiz" element={<div>퀴즈</div>} />
       </Route>
