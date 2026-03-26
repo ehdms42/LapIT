@@ -15,10 +15,13 @@ export default function Layout() {
   return (
     <div className="min-h-screen bg-[#f5f5f7]">
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur border-b border-black/8">
-        <div className="max-w-6xl mx-auto px-8 h-16 flex items-center justify-between">
+        <div className="max-w-4xl mx-auto px-8 h-16 flex items-center justify-between">
           
           <Link to="/" className="flex items-center">
-            <img src="/lapit-logo.svg" alt="LapIT" className="h-7 w-auto" />
+            <img 
+              src="/lapit-logo.png" 
+              alt="LapIT" 
+              style={{ height: 90, width: "auto", objectFit: "contain" }}/>
           </Link>
 
           <nav className="flex gap-1">
@@ -43,7 +46,7 @@ export default function Layout() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-8 py-10">
+      <main className="max-w-4xl mx-auto px-8 py-10">
         <Outlet />
       </main>
     </div>
