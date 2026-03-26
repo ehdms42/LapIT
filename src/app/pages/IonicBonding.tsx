@@ -94,9 +94,30 @@ function PaletteItem({ ion, onDragStart }: { ion: Ion; onDragStart: (ion: Ion, e
   )
 }
 
+function gcd(a: number, b: number): number {
+  return b === 0 ? a : gcd(b, a % b)
+}
+
 function getDbKey(cats: CanvasIon[], anis: CanvasIon[]): string {
   if (!cats.length || !anis.length) return ''
-  return `${cats[0].ion.id}-${Math.abs(cats[0].ion.charge) * cats.length}+${anis[0].ion.id}-${Math.abs(anis[0].ion.charge) * anis.length}`
+
+  const catCharge = Math.abs(cats[0].ion.charge)
+  const aniCharge = Math.abs(anis[0].ion.charge)
+
+  const catCount = cats.length
+  const aniCount = anis.length
+
+  // 총 전하 기준
+  const catTotal = catCharge * catCount
+  const aniTotal = aniCharge * aniCount
+
+  // 최소비로 환원
+  const g = gcd(catTotal, aniTotal)
+
+  const normCat = catTotal / g
+  const normAni = aniTotal / g
+
+  return `${cats[0].ion.id}-${normCat}+${anis[0].ion.id}-${normAni}`
 }
 
 function isPolyatomic(symbol: string): boolean {
@@ -116,11 +137,24 @@ function CompoundResult({ cats, anis }: { cats: CanvasIon[]; anis: CanvasIon[] }
   const color = data?.color ?? '#3b82f6'
 
   const autoFormula = () => {
-    const cm = new Map<string, number>(), am = new Map<string, number>()
-    cats.forEach(c => { cm.set(c.ion.symbol, (cm.get(c.ion.symbol) || 0) + 1) })
-    anis.forEach(a => { am.set(a.ion.symbol, (am.get(a.ion.symbol) || 0) + 1) })
-    return [...cm.entries()].map(([s, n]) => fmtFormula(s, n)).join('')
-         + [...am.entries()].map(([s, n]) => fmtFormula(s, n)).join('')
+    const catSymbol = cats[0].ion.symbol
+    const aniSymbol = anis[0].ion.symbol
+  
+    const catCharge = Math.abs(cats[0].ion.charge)
+    const aniCharge = Math.abs(anis[0].ion.charge)
+  
+    const catCount = cats.length
+    const aniCount = anis.length
+  
+    const catTotal = catCharge * catCount
+    const aniTotal = aniCharge * aniCount
+  
+    const g = gcd(catTotal, aniTotal)
+  
+    const normCat = catTotal / g
+    const normAni = aniTotal / g
+  
+    return fmtFormula(catSymbol, normCat) + fmtFormula(aniSymbol, normAni)
   }
 
   const formula = data?.formula ?? autoFormula()
