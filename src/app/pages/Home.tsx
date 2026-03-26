@@ -143,30 +143,6 @@ export default function Home() {
           </motion.div>
         ))}
       </div>
-
-      {/* 권장 학습 순서 */}
-      <motion.div
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-        transition={{ delay: 0.45, duration: 0.4 }}
-        style={{
-          marginTop: 32, padding: '20px 28px',
-          background: '#1d1d1f', borderRadius: 16,
-        }}
-      >
-        <p style={{ fontSize: 11, fontWeight: 700, color: '#48484a',
-          letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 12 }}>권장 학습 순서</p>
-        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-          {[
-            { t: '이온 개념', c: '#64a0ff' }, { t: '→', c: '#3a3a3c' },
-            { t: '이온 실습', c: '#64a0ff' }, { t: '→', c: '#3a3a3c' },
-            { t: '공유 개념', c: '#bf9fff' }, { t: '→', c: '#3a3a3c' },
-            { t: '공유 실습', c: '#bf9fff' }, { t: '→', c: '#3a3a3c' },
-            { t: '퀴즈', c: '#6ee7b7' },
-          ].map((item, i) => (
-            <span key={i} style={{ fontSize: 13, fontWeight: item.t === '→' ? 400 : 600, color: item.c }}>{item.t}</span>
-          ))}
-        </div>
-      </motion.div>
     </div>
   )
 }
