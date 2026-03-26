@@ -19,9 +19,10 @@ export default function Layout() {
           
           <Link to="/" className="flex items-center">
             <img 
-              src="/lapit-logo.png" 
-              alt="LapIT" 
-              style={{ height: 90, width: "auto", objectFit: "contain" }}/>
+              src="/lapit-logo.png"
+              alt="LapIT"
+              className="h-10 w-auto object-contain"
+            />
           </Link>
 
           <nav className="flex gap-1">
