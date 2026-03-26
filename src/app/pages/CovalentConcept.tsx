@@ -205,7 +205,7 @@ export default function CovalentConcept() {
           <p style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.6)", marginBottom: 6 }}>개념 학습 완료</p>
           <p style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-0.025em" }}>분자 구조를 직접 확인해보세요</p>
         </div>
-        <Link to="/covalent" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#fff", color: "#7248d6", textDecoration: "none", borderRadius: 980, padding: "13px 24px", fontSize: 14, fontWeight: 700, flexShrink: 0 }}>
+        <Link to="/covalent-lab" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#fff", color: "#7248d6", textDecoration: "none", borderRadius: 980, padding: "13px 24px", fontSize: 14, fontWeight: 700, flexShrink: 0 }}>
           실습 시작 <ArrowRight style={{ width: 15, height: 15 }} />
         </Link>
       </div>
