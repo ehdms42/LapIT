@@ -100,24 +100,12 @@ function gcd(a: number, b: number): number {
 
 function getDbKey(cats: CanvasIon[], anis: CanvasIon[]): string {
   if (!cats.length || !anis.length) return ''
-
   const catCharge = Math.abs(cats[0].ion.charge)
   const aniCharge = Math.abs(anis[0].ion.charge)
-
-  const catCount = cats.length
-  const aniCount = anis.length
-
-  // 총 전하 기준
-  const catTotal = catCharge * catCount
-  const aniTotal = aniCharge * aniCount
-
-  // 최소비로 환원
+  const catTotal = catCharge * cats.length
+  const aniTotal = aniCharge * anis.length
   const g = gcd(catTotal, aniTotal)
-
-  const normCat = catTotal / g
-  const normAni = aniTotal / g
-
-  return `${cats[0].ion.id}-${normCat}+${anis[0].ion.id}-${normAni}`
+  return `${cats[0].ion.id}-${catTotal / g}+${anis[0].ion.id}-${aniTotal / g}`
 }
 
 function isPolyatomic(symbol: string): boolean {
@@ -137,24 +125,12 @@ function CompoundResult({ cats, anis }: { cats: CanvasIon[]; anis: CanvasIon[] }
   const color = data?.color ?? '#3b82f6'
 
   const autoFormula = () => {
-    const catSymbol = cats[0].ion.symbol
-    const aniSymbol = anis[0].ion.symbol
-  
     const catCharge = Math.abs(cats[0].ion.charge)
     const aniCharge = Math.abs(anis[0].ion.charge)
-  
-    const catCount = cats.length
-    const aniCount = anis.length
-  
-    const catTotal = catCharge * catCount
-    const aniTotal = aniCharge * aniCount
-  
+    const catTotal = catCharge * cats.length
+    const aniTotal = aniCharge * anis.length
     const g = gcd(catTotal, aniTotal)
-  
-    const normCat = catTotal / g
-    const normAni = aniTotal / g
-  
-    return fmtFormula(catSymbol, normCat) + fmtFormula(aniSymbol, normAni)
+    return fmtFormula(cats[0].ion.symbol, catTotal / g) + fmtFormula(anis[0].ion.symbol, aniTotal / g)
   }
 
   const formula = data?.formula ?? autoFormula()
@@ -203,19 +179,16 @@ function getImbalanceReason(totPos: number, totNeg: number, cats: CanvasIon[], a
   return `음이온 전하 합(−${totNeg})이 양이온 합(+${totPos})보다 ${diff} 큽니다. 양이온을 더 추가하거나 음이온을 줄이세요.`
 }
 
-// ── 연결 그래프 탐색: 모든 이온이 하나의 묶음인지 확인 ────────
 function isConnectedCluster(items: CanvasIon[]): boolean {
   if (items.length === 0) return false
   const adj = new Map<string, Set<string>>()
   items.forEach(it => adj.set(it.uid, new Set()))
-
   items.forEach(it => {
     if (it.stackAbove) { adj.get(it.uid)!.add(it.stackAbove); adj.get(it.stackAbove)?.add(it.uid) }
     if (it.stackBelow) { adj.get(it.uid)!.add(it.stackBelow); adj.get(it.stackBelow)?.add(it.uid) }
     it.bondedAnions.forEach(aid => { adj.get(it.uid)!.add(aid); adj.get(aid)?.add(it.uid) })
     if (it.bondedTo) { adj.get(it.uid)!.add(it.bondedTo); adj.get(it.bondedTo)?.add(it.uid) }
   })
-
   const visited = new Set<string>()
   const queue = [items[0].uid]
   visited.add(items[0].uid)
@@ -226,38 +199,23 @@ function isConnectedCluster(items: CanvasIon[]): boolean {
   return visited.size === items.length
 }
 
-// ── 이온 종류가 정확히 1쌍(양이온 1종 + 음이온 1종)인지 확인 ──
 function isSinglePair(cats: CanvasIon[], anis: CanvasIon[]): boolean {
-  const catTypes = new Set(cats.map(c => c.ion.id))
-  const aniTypes = new Set(anis.map(a => a.ion.id))
-  return catTypes.size === 1 && aniTypes.size === 1
+  return new Set(cats.map(c => c.ion.id)).size === 1 && new Set(anis.map(a => a.ion.id)).size === 1
 }
 
 interface CanvasIon {
-  uid: string
-  ion: Ion
-  x: number
-  y: number
-  stackAbove: string | null
-  stackBelow: string | null
-  bondedAnions: string[]
-  bondedTo: string | null
+  uid: string; ion: Ion; x: number; y: number
+  stackAbove: string | null; stackBelow: string | null
+  bondedAnions: string[]; bondedTo: string | null
 }
 
 function getStack(uid: string, items: CanvasIon[]): CanvasIon[] {
   const map = new Map(items.map(it => [it.uid, it]))
   let top = map.get(uid)!
-  while (top.stackAbove) {
-    const above = map.get(top.stackAbove)
-    if (!above) break
-    top = above
-  }
+  while (top.stackAbove) { const a = map.get(top.stackAbove); if (!a) break; top = a }
   const result: CanvasIon[] = []
   let cur: CanvasIon | undefined = top
-  while (cur) {
-    result.push(cur)
-    cur = cur.stackBelow ? map.get(cur.stackBelow) : undefined
-  }
+  while (cur) { result.push(cur); cur = cur.stackBelow ? map.get(cur.stackBelow) : undefined }
   return result
 }
 
@@ -273,10 +231,150 @@ export default function IonicBonding() {
   const [feedback, setFeedback] = useState<{ ok: boolean; msg: string; detail?: string } | null>(null)
   const uidRef = useRef(0)
   const canvasRef = useRef<HTMLDivElement>(null)
-  const drag = useRef<{ uid: string | null; ion: Ion | null; ghostEl: HTMLDivElement | null; offsetX: number; offsetY: number; fromPalette: boolean }>
-    ({ uid: null, ion: null, ghostEl: null, offsetX: 0, offsetY: 0, fromPalette: false })
+  const drag = useRef<{
+    uid: string | null; ion: Ion | null; ghostEl: HTMLDivElement | null
+    offsetX: number; offsetY: number; fromPalette: boolean
+  }>({ uid: null, ion: null, ghostEl: null, offsetX: 0, offsetY: 0, fromPalette: false })
   const mkUid = () => `u${uidRef.current++}`
 
+  // ── cleanup을 ref로 감싸서 순환 의존성 제거 ──────────────────
+  const cleanupRef = useRef<() => void>(() => {})
+
+  // ── onMove: canvasRef만 의존 ──────────────────────────────────
+  const onMove = useCallback((e: PointerEvent) => {
+    const d = drag.current
+    if (!d.ion) return
+    if (d.ghostEl) {
+      d.ghostEl.style.left = `${e.clientX - d.offsetX}px`
+      d.ghostEl.style.top = `${e.clientY - d.offsetY}px`
+    }
+    if (!d.fromPalette && d.uid) {
+      const rect = canvasRef.current?.getBoundingClientRect()
+      if (!rect) return
+      setItems(prev => prev.map(it => it.uid === d.uid
+        ? { ...it, x: e.clientX - rect.left - d.offsetX, y: e.clientY - rect.top - d.offsetY }
+        : it
+      ))
+    }
+  }, [])
+
+  // ── onUp: setItems만 의존 (cleanup은 ref 통해 호출) ───────────
+  const onUp = useCallback((e: PointerEvent) => {
+    const d = drag.current
+    if (!d.ion) return
+    d.ghostEl?.remove()
+    const canvas = canvasRef.current
+    if (!canvas) { cleanupRef.current(); return }
+    const rect = canvas.getBoundingClientRect()
+    if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) {
+      if (d.fromPalette) { cleanupRef.current(); return }
+    }
+    const dropX = e.clientX - rect.left - d.offsetX
+    const dropY = e.clientY - rect.top - d.offsetY
+
+    setItems(prev => {
+      let next = [...prev]
+      let dUid = d.uid
+      if (d.fromPalette) {
+        const nu = mkUid()
+        next = [...next, { uid: nu, ion: d.ion!, x: dropX, y: dropY, stackAbove: null, stackBelow: null, bondedAnions: [], bondedTo: null }]
+        dUid = nu
+      } else {
+        next = next.map(it => it.uid === dUid ? { ...it, x: dropX, y: dropY } : it)
+      }
+      const dropped = next.find(it => it.uid === dUid)!
+      const isCat = dropped.ion.type === 'cation'
+      const drH = pieceH(Math.abs(dropped.ion.charge))
+      let bestDist = SNAP, bestUid: string | null = null
+      let mode: 'horiCatAnion' | 'horiAniCat' | 'stackBelow' | 'stackAbove' = 'horiCatAnion'
+      for (const other of next) {
+        if (other.uid === dUid) continue
+        const otH = pieceH(Math.abs(other.ion.charge))
+        const otIsCat = other.ion.type === 'cation'
+        if (isCat && !otIsCat) {
+          if (other.bondedTo) continue
+          const dist = Math.hypot((dropped.x + BW) - (other.x + ND), (dropped.y + drH / 2) - (other.y + otH / 2))
+          if (dist < bestDist) { bestDist = dist; bestUid = other.uid; mode = 'horiCatAnion' }
+        } else if (!isCat && otIsCat) {
+          const stack = getStack(other.uid, next)
+          const { topY, totalH } = stackBounds(stack)
+          const dist = Math.hypot((dropped.x + ND) - (other.x + BW), (dropped.y + drH / 2) - (topY + totalH / 2))
+          if (dist < bestDist) { bestDist = dist; bestUid = other.uid; mode = 'horiAniCat' }
+        } else if (isCat && otIsCat) {
+          const distB = Math.hypot(dropped.x - other.x, dropped.y - (other.y + otH))
+          const distA = Math.hypot(dropped.x - other.x, (dropped.y + drH) - other.y)
+          if (distB < bestDist) { bestDist = distB; bestUid = other.uid; mode = 'stackBelow' }
+          if (distA < bestDist) { bestDist = distA; bestUid = other.uid; mode = 'stackAbove' }
+        }
+      }
+      if (!bestUid) return next
+      const partner = next.find(it => it.uid === bestUid)!
+      const partH = pieceH(Math.abs(partner.ion.charge))
+      if (mode === 'horiCatAnion') {
+        const { topY } = stackBounds(getStack(dUid!, next))
+        const slot = partner.bondedAnions.length
+        next = next.map(it => {
+          if (it.uid === dUid) return { ...it, bondedAnions: [...it.bondedAnions, bestUid!] }
+          if (it.uid === bestUid) return { ...it, x: dropped.x + BW - ND + slot * BW, y: topY + slot * UNIT_H, bondedTo: dUid }
+          return it
+        })
+      } else if (mode === 'horiAniCat') {
+        const { topY } = stackBounds(getStack(bestUid, next))
+        const slot = partner.bondedAnions.length
+        next = next.map(it => {
+          if (it.uid === bestUid) return { ...it, bondedAnions: [...it.bondedAnions, dUid!] }
+          if (it.uid === dUid) return { ...it, x: partner.x + BW - ND + slot * BW, y: topY + slot * UNIT_H, bondedTo: bestUid }
+          return it
+        })
+      } else if (mode === 'stackBelow') {
+        const newY = partner.y + partH
+        const baseNext = next.map(it =>
+          it.uid === dUid ? { ...it, x: partner.x, y: newY, stackAbove: bestUid }
+          : it.uid === bestUid ? { ...it, stackBelow: dUid } : it
+        )
+        const { topY: newTopY } = stackBounds(getStack(bestUid, baseNext))
+        const allCatUids = getStack(bestUid, baseNext).map(c => c.uid)
+        next = baseNext.map(it => {
+          if (it.bondedTo && allCatUids.includes(it.bondedTo)) {
+            const catItem = baseNext.find(c => c.uid === it.bondedTo)!
+            const idx = catItem.bondedAnions.indexOf(it.uid)
+            return { ...it, x: partner.x + BW - ND + idx * BW, y: newTopY + idx * UNIT_H }
+          }
+          return it
+        })
+      } else {
+        const newY = partner.y - drH
+        const baseNext = next.map(it =>
+          it.uid === dUid ? { ...it, x: partner.x, y: newY, stackBelow: bestUid }
+          : it.uid === bestUid ? { ...it, stackAbove: dUid } : it
+        )
+        const { topY: newTopY } = stackBounds(getStack(dUid!, baseNext))
+        const allCatUids = getStack(dUid!, baseNext).map(c => c.uid)
+        next = baseNext.map(it => {
+          if (it.bondedTo && allCatUids.includes(it.bondedTo)) {
+            const catItem = baseNext.find(c => c.uid === it.bondedTo)!
+            const idx = catItem.bondedAnions.indexOf(it.uid)
+            return { ...it, x: partner.x + BW - ND + idx * BW, y: newTopY + idx * UNIT_H }
+          }
+          return it
+        })
+      }
+      return next
+    })
+    cleanupRef.current()
+  }, [])
+
+  // ── cleanup 정의 후 ref에 할당 ────────────────────────────────
+  const cleanup = useCallback(() => {
+    window.removeEventListener('pointermove', onMove)
+    window.removeEventListener('pointerup', onUp)
+    drag.current = { uid: null, ion: null, ghostEl: null, offsetX: 0, offsetY: 0, fromPalette: false }
+  }, [onMove, onUp])
+
+  // ref 최신화 (렌더마다 갱신)
+  cleanupRef.current = cleanup
+
+  // ── 팔레트 드래그 시작 ────────────────────────────────────────
   const onPaletteDragStart = useCallback((ion: Ion, e: React.PointerEvent) => {
     e.preventDefault()
     const ghost = document.createElement('div')
@@ -286,8 +384,9 @@ export default function IonicBonding() {
     drag.current = { uid: null, ion, ghostEl: ghost, offsetX: 46, offsetY: 28, fromPalette: true }
     window.addEventListener('pointermove', onMove)
     window.addEventListener('pointerup', onUp)
-  }, [])
+  }, [onMove, onUp])
 
+  // ── 캔버스 드래그 시작 ────────────────────────────────────────
   const onCanvasDragStart = useCallback((e: React.PointerEvent, uid: string) => {
     e.preventDefault(); e.stopPropagation()
     const item = items.find(i => i.uid === uid)
@@ -312,163 +411,7 @@ export default function IonicBonding() {
     setFeedback(null)
     window.addEventListener('pointermove', onMove)
     window.addEventListener('pointerup', onUp)
-  }, [items])
-
-  const onMove = useCallback((e: PointerEvent) => {
-    const d = drag.current
-    if (!d.ion) return
-    if (d.ghostEl) {
-      d.ghostEl.style.left = `${e.clientX - d.offsetX}px`
-      d.ghostEl.style.top = `${e.clientY - d.offsetY}px`
-    }
-    if (!d.fromPalette && d.uid) {
-      const rect = canvasRef.current?.getBoundingClientRect()
-      if (!rect) return
-      setItems(prev => prev.map(it => it.uid === d.uid
-        ? { ...it, x: e.clientX - rect.left - d.offsetX, y: e.clientY - rect.top - d.offsetY }
-        : it
-      ))
-    }
-  }, [])
-
-  const onUp = useCallback((e: PointerEvent) => {
-    const d = drag.current
-    if (!d.ion) return
-    d.ghostEl?.remove()
-    const canvas = canvasRef.current
-    if (!canvas) { cleanup(); return }
-    const rect = canvas.getBoundingClientRect()
-    if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) {
-      if (d.fromPalette) { cleanup(); return }
-    }
-    const dropX = e.clientX - rect.left - d.offsetX
-    const dropY = e.clientY - rect.top - d.offsetY
-
-    setItems(prev => {
-      let next = [...prev]
-      let dUid = d.uid
-
-      if (d.fromPalette) {
-        const nu = mkUid()
-        next = [...next, { uid: nu, ion: d.ion!, x: dropX, y: dropY, stackAbove: null, stackBelow: null, bondedAnions: [], bondedTo: null }]
-        dUid = nu
-      } else {
-        next = next.map(it => it.uid === dUid ? { ...it, x: dropX, y: dropY } : it)
-      }
-
-      const dropped = next.find(it => it.uid === dUid)!
-      const isCat = dropped.ion.type === 'cation'
-      const drH = pieceH(Math.abs(dropped.ion.charge))
-
-      let bestDist = SNAP, bestUid: string | null = null
-      let mode: 'horiCatAnion' | 'horiAniCat' | 'stackBelow' | 'stackAbove' = 'horiCatAnion'
-
-      for (const other of next) {
-        if (other.uid === dUid) continue
-        const otH = pieceH(Math.abs(other.ion.charge))
-        const otIsCat = other.ion.type === 'cation'
-
-        if (isCat && !otIsCat) {
-          if (other.bondedTo) continue
-          const dx = (dropped.x + BW) - (other.x + ND)
-          const dy = (dropped.y + drH / 2) - (other.y + otH / 2)
-          const dist = Math.hypot(dx, dy)
-          if (dist < bestDist) { bestDist = dist; bestUid = other.uid; mode = 'horiCatAnion' }
-        } else if (!isCat && otIsCat) {
-          const stack = getStack(other.uid, next)
-          const { topY, totalH } = stackBounds(stack)
-          const dx = (dropped.x + ND) - (other.x + BW)
-          const dy = (dropped.y + drH / 2) - (topY + totalH / 2)
-          const dist = Math.hypot(dx, dy)
-          if (dist < bestDist) { bestDist = dist; bestUid = other.uid; mode = 'horiAniCat' }
-        } else if (isCat && otIsCat) {
-          const distB = Math.hypot(dropped.x - other.x, dropped.y - (other.y + otH))
-          const distA = Math.hypot(dropped.x - other.x, (dropped.y + drH) - other.y)
-          if (distB < bestDist) { bestDist = distB; bestUid = other.uid; mode = 'stackBelow' }
-          if (distA < bestDist) { bestDist = distA; bestUid = other.uid; mode = 'stackAbove' }
-        }
-      }
-
-      if (!bestUid) return next
-      const partner = next.find(it => it.uid === bestUid)!
-      const partH = pieceH(Math.abs(partner.ion.charge))
-
-      if (mode === 'horiCatAnion') {
-        const stack = getStack(dUid!, next)
-        const { topY } = stackBounds(stack)
-        const aniSlot = partner.bondedAnions.length
-        const aniX = dropped.x + BW - ND + aniSlot * BW
-        const aniY = topY + aniSlot * UNIT_H
-        next = next.map(it => {
-          if (it.uid === dUid) return { ...it, bondedAnions: [...it.bondedAnions, bestUid!] }
-          if (it.uid === bestUid) return { ...it, x: aniX, y: aniY, bondedTo: dUid }
-          return it
-        })
-      } else if (mode === 'horiAniCat') {
-        const stack = getStack(bestUid, next)
-        const { topY } = stackBounds(stack)
-        const existingCount = partner.bondedAnions.length
-        const aniX = partner.x + BW - ND + existingCount * BW
-        const aniY = topY + existingCount * UNIT_H
-        next = next.map(it => {
-          if (it.uid === bestUid) return { ...it, bondedAnions: [...it.bondedAnions, dUid!] }
-          if (it.uid === dUid) return { ...it, x: aniX, y: aniY, bondedTo: bestUid }
-          return it
-        })
-      } else if (mode === 'stackBelow') {
-        const newY = partner.y + partH
-        next = next.map(it => {
-          if (it.uid === dUid) return { ...it, x: partner.x, y: newY, stackAbove: bestUid }
-          if (it.uid === bestUid) return { ...it, stackBelow: dUid }
-          return it
-        })
-        const updatedStack = getStack(bestUid, next.map(it =>
-          it.uid === dUid ? { ...it, x: partner.x, y: newY, stackAbove: bestUid }
-            : it.uid === bestUid ? { ...it, stackBelow: dUid } : it
-        ))
-        const { topY: newTopY } = stackBounds(updatedStack)
-        const allCatUids = updatedStack.map(c => c.uid)
-        next = next.map(it => {
-          if (it.bondedTo && allCatUids.includes(it.bondedTo)) {
-            const catItem = next.find(c => c.uid === it.bondedTo)!
-            const idx = catItem.bondedAnions.indexOf(it.uid)
-            return { ...it, x: partner.x + BW - ND + idx * BW, y: newTopY + idx * UNIT_H }
-          }
-          return it
-        })
-      } else {
-        const newY = partner.y - drH
-        next = next.map(it => {
-          if (it.uid === dUid) return { ...it, x: partner.x, y: newY, stackBelow: bestUid }
-          if (it.uid === bestUid) return { ...it, stackAbove: dUid }
-          return it
-        })
-        const updatedStack = getStack(dUid!, next.map(it =>
-          it.uid === dUid ? { ...it, x: partner.x, y: newY, stackBelow: bestUid }
-            : it.uid === bestUid ? { ...it, stackAbove: dUid } : it
-        ))
-        const { topY: newTopY } = stackBounds(updatedStack)
-        const allCatUids = updatedStack.map(c => c.uid)
-        next = next.map(it => {
-          if (it.bondedTo && allCatUids.includes(it.bondedTo)) {
-            const catItem = next.find(c => c.uid === it.bondedTo)!
-            const idx = catItem.bondedAnions.indexOf(it.uid)
-            return { ...it, x: partner.x + BW - ND + idx * BW, y: newTopY + idx * UNIT_H }
-          }
-          return it
-        })
-      }
-
-      return next
-    })
-    cleanup()
-  }, [])
-
-  function cleanup() {
-    window.removeEventListener('pointermove', onMove)
-    window.removeEventListener('pointerup', onUp)
-    drag.current = { uid: null, ion: null, ghostEl: null, offsetX: 0, offsetY: 0, fromPalette: false }
-  }
+  }, [items, onMove, onUp])
 
   const remove = (uid: string) => {
     setItems(prev => prev.filter(it => it.uid !== uid).map(it => ({
@@ -484,28 +427,24 @@ export default function IonicBonding() {
   const reset = () => { setItems([]); setFeedback(null) }
 
   const cations = items.filter(i => i.ion.type === 'cation')
-  const anions = items.filter(i => i.ion.type === 'anion')
-  const totPos = cations.reduce((s, c) => s + c.ion.charge, 0)
-  const totNeg = anions.reduce((s, a) => s + Math.abs(a.ion.charge), 0)
+  const anions  = items.filter(i => i.ion.type === 'anion')
+  const totPos  = cations.reduce((s, c) => s + c.ion.charge, 0)
+  const totNeg  = anions.reduce((s, a) => s + Math.abs(a.ion.charge), 0)
   const balanced = cations.length > 0 && anions.length > 0 && totPos === totNeg
     && isSinglePair(cations, anions) && isConnectedCluster(items)
 
   const check = () => {
     if (!cations.length || !anions.length) {
-      setFeedback({ ok: false, msg: '전하 균형이 맞지 않습니다', detail: getImbalanceReason(totPos, totNeg, cations, anions) })
-      return
+      setFeedback({ ok: false, msg: '전하 균형이 맞지 않습니다', detail: getImbalanceReason(totPos, totNeg, cations, anions) }); return
     }
     if (!isSinglePair(cations, anions)) {
-      setFeedback({ ok: false, msg: '이온 종류를 확인해주세요', detail: '하나의 화합물은 양이온 1종 + 음이온 1종으로만 구성되어야 합니다. (예: NaCl + KBr 혼합 불가)' })
-      return
+      setFeedback({ ok: false, msg: '이온 종류를 확인해주세요', detail: '하나의 화합물은 양이온 1종 + 음이온 1종으로만 구성되어야 합니다.' }); return
     }
     if (!isConnectedCluster(items)) {
-      setFeedback({ ok: false, msg: '이온이 연결되지 않았습니다', detail: '모든 이온이 snap으로 결합된 하나의 묶음이어야 합니다. 이온을 가까이 놓아 결합시켜주세요.' })
-      return
+      setFeedback({ ok: false, msg: '이온이 연결되지 않았습니다', detail: '모든 이온이 snap으로 결합된 하나의 묶음이어야 합니다.' }); return
     }
     if (totPos !== totNeg) {
-      setFeedback({ ok: false, msg: '전하 균형이 맞지 않습니다', detail: getImbalanceReason(totPos, totNeg, cations, anions) })
-      return
+      setFeedback({ ok: false, msg: '전하 균형이 맞지 않습니다', detail: getImbalanceReason(totPos, totNeg, cations, anions) }); return
     }
     setFeedback({ ok: true, msg: '전하 균형 달성', detail: `양이온 합계 +${totPos}, 음이온 합계 −${totNeg} → 전기적으로 중성인 화합물 완성` })
   }
@@ -526,7 +465,6 @@ export default function IonicBonding() {
       </div>
 
       <div style={{ display: 'grid', gap: 20 }} className="lg:grid-cols-[280px_1fr]">
-
         <div style={{ ...C, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <div style={{ display: 'flex', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
             {(['cation', 'anion'] as const).map(t => (
@@ -559,7 +497,6 @@ export default function IonicBonding() {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-
           <div style={{ ...C, padding: '16px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
               {[
