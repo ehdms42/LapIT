@@ -5,7 +5,7 @@ import IonicConcept from './pages/IonicConcept'
 import IonicBonding from './pages/IonicBonding'
 import CovalentConcept from './pages/CovalentConcept'
 import CovalentBonding from './pages/CovalentBonding'
-import { Quiz } from './pages/Quiz'
+import Quiz from './pages/Quiz'
 
 
 export default function AppRoutes() {

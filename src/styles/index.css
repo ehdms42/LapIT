@@ -1,1 +1,50 @@
 @import "tailwindcss";
+
+/* ── 반응형 유틸리티 ─────────────────────────────────────────── */
+
+/* 기본(모바일): 숨김, md 이상: flex */
+.hidden { display: none; }
+@media (min-width: 768px) {
+  .hidden.md\:flex { display: flex; }
+}
+
+/* 기본: flex, md 이상: 숨김 */
+@media (min-width: 768px) {
+  .flex.md\:hidden { display: none; }
+}
+
+/* 그리드 컬럼 */
+.grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+.grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+@media (min-width: 640px) {
+  .sm\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sm\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (min-width: 1024px) {
+  .lg\:grid-cols-\[280px_1fr\] { grid-template-columns: 280px 1fr; }
+  .lg\:grid-cols-\[220px_1fr\] { grid-template-columns: 220px 1fr; }
+  .lg\:max-h-\[calc\(100vh-260px\)\] { max-height: calc(100vh - 260px); }
+}
+
+/* 팔레트 maxHeight */
+.max-h-\[300px\] { max-height: 300px; }
+
+/* 이온 실습 팔레트+캔버스 레이아웃 */
+@media (max-width: 1023px) {
+  .lg\:grid-cols-\[280px_1fr\] { grid-template-columns: 1fr; }
+  .lg\:grid-cols-\[220px_1fr\] { grid-template-columns: 1fr; }
+}
+
+/* 텍스트 줄바꿈 방지 */
+.whitespace-nowrap { white-space: nowrap; }
+
+/* 스크롤 가능한 테이블 컨테이너 */
+.overflow-x-auto { overflow-x: auto; }
+
+/* 전역 box-sizing */
+*, *::before, *::after { box-sizing: border-box; }
+
+/* 모바일에서 tap highlight 제거 */
+button, a { -webkit-tap-highlight-color: transparent; }
