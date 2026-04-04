@@ -480,7 +480,7 @@ export default function IonicBonding() {
         </p>
       </div>
 
-      <div style={{ display: 'grid', gap: 20 }} className="lg:grid-cols-[280px_1fr]">
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-[280px_1fr]">
         <div style={{ ...C, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <div style={{ display: 'flex', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
             {(['cation', 'anion'] as const).map(t => (

@@ -1,1 +1,24 @@
 @import "tailwindcss";
+
+/* ── 커스텀 유틸리티 (Tailwind에서 제공하지 않는 값만) ────────── */
+
+@media (min-width: 1024px) {
+  .lg\:grid-cols-\[280px_1fr\] { grid-template-columns: 280px 1fr; }
+  .lg\:grid-cols-\[220px_1fr\] { grid-template-columns: 220px 1fr; }
+  .lg\:max-h-\[calc\(100vh-260px\)\] { max-height: calc(100vh - 260px); }
+}
+
+/* 팔레트 maxHeight */
+.max-h-\[300px\] { max-height: 300px; }
+
+/* 이온 실습 팔레트+캔버스 레이아웃 */
+@media (max-width: 1023px) {
+  .lg\:grid-cols-\[280px_1fr\] { grid-template-columns: 1fr; }
+  .lg\:grid-cols-\[220px_1fr\] { grid-template-columns: 1fr; }
+}
+
+/* 전역 box-sizing */
+*, *::before, *::after { box-sizing: border-box; }
+
+/* 모바일에서 tap highlight 제거 */
+button, a { -webkit-tap-highlight-color: transparent; }
