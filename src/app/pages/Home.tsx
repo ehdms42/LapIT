@@ -108,11 +108,14 @@ export default function Home() {
             </div>
 
             {/* 스텝들 — 태블릿에서는 세로로 */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: `repeat(${unit.steps.length}, 1fr)`,
-            }}
-              className={unit.steps.length === 2 ? 'grid-cols-1 sm:grid-cols-2' : ''}
+            <div
+              className={
+                unit.steps.length === 1
+                  ? 'grid grid-cols-1'
+                  : unit.steps.length === 2
+                  ? 'grid grid-cols-1 sm:grid-cols-2'
+                  : `grid grid-cols-[repeat(${unit.steps.length},1fr)]`
+              }
             >
               {unit.steps.map((step, si) => (
                 <Link key={step.path} to={step.path}

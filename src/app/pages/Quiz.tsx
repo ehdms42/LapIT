@@ -35,13 +35,20 @@ export default function Quiz() {
   const [sel, setSel] = useState<number | null>(null)
   const [shown, setShown] = useState(false)
   const [score, setScore] = useState(0)
+  const [answersCorrect, setAnswersCorrect] = useState<boolean[]>(new Array(Qs.length).fill(false))
   const [done, setDone] = useState(false)
   const q = Qs[cur]
 
   const submit = () => {
     if (sel === null) return
     setShown(true)
-    if (sel === q.ans) setScore(s => s + 1)
+    const isCorrect = sel === q.ans
+    setAnswersCorrect(prev => {
+      const updated = [...prev]
+      updated[cur] = isCorrect
+      return updated
+    })
+    if (isCorrect) setScore(s => s + 1)
   }
 
   const next = () => {
@@ -49,7 +56,7 @@ export default function Quiz() {
     else setDone(true)
   }
 
-  const reset = () => { setCur(0); setSel(null); setShown(false); setScore(0); setDone(false) }
+  const reset = () => { setCur(0); setSel(null); setShown(false); setScore(0); setAnswersCorrect(new Array(Qs.length).fill(false)); setDone(false) }
 
   if (done) {
     const pct = Math.round((score / Qs.length) * 100)
@@ -80,9 +87,9 @@ export default function Quiz() {
               {Qs.map((_, i) => (
                 <div key={i} style={{ width: 30, height: 30, borderRadius: 8, display: 'flex',
                   alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700,
-                  background: i < score ? '#f0fdf4' : '#fff5f5',
-                  color: i < score ? '#16a34a' : '#dc2626',
-                  border: `1.5px solid ${i < score ? '#bbf7d0' : '#fecaca'}` }}>{i + 1}</div>
+                  background: answersCorrect[i] ? '#f0fdf4' : '#fff5f5',
+                  color: answersCorrect[i] ? '#16a34a' : '#dc2626',
+                  border: `1.5px solid ${answersCorrect[i] ? '#bbf7d0' : '#fecaca'}` }}>{i + 1}</div>
               ))}
             </div>
             {pct < 80 && (
