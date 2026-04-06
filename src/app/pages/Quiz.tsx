@@ -89,7 +89,11 @@ export default function Quiz() {
                   alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700,
                   background: answersCorrect[i] ? '#f0fdf4' : '#fff5f5',
                   color: answersCorrect[i] ? '#16a34a' : '#dc2626',
-                  border: `1.5px solid ${answersCorrect[i] ? '#bbf7d0' : '#fecaca'}` }}>{i + 1}</div>
+                  border: `1.5px solid ${answersCorrect[i] ? '#bbf7d0' : '#fecaca'}` }}
+                  role="img"
+                  aria-label={answersCorrect[i] ? `Question ${i + 1} correct` : `Question ${i + 1} incorrect`}>
+                  {answersCorrect[i] ? '✓' : '✕'}
+                </div>
               ))}
             </div>
             {pct < 80 && (
@@ -163,7 +167,7 @@ export default function Quiz() {
               } else if (isSel) { bg = '#eff6ff'; border = '#3182f6'; color = '#1d4ed8' }
 
               return (
-                <button key={i} onClick={() => !shown && setSel(i)} style={{
+                <button key={i} onClick={() => !shown && setSel(i)} disabled={shown} style={{
                   display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px',
                   borderRadius: 10, border: `2px solid ${border}`, background: bg,
                   cursor: shown ? 'default' : 'pointer', textAlign: 'left', width: '100%',
