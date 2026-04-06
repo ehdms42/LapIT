@@ -129,7 +129,7 @@ export default function Quiz() {
           <span style={{ fontSize: 12, fontWeight: 700, color: '#3182f6' }}>정답 {score}개</span>
         </div>
         <div style={{ background: '#f2f4f6', borderRadius: 100, height: 6, overflow: 'hidden' }}>
-          <motion.div animate={{ width: `${(cur / Qs.length) * 100}%` }} transition={{ duration: 0.3 }}
+          <motion.div animate={{ width: Qs.length === 0 ? '0%' : `${Math.min(Math.max(((cur + 1) / Qs.length) * 100, 0), 100)}%` }} transition={{ duration: 0.3 }}
             style={{ height: '100%', background: '#3182f6', borderRadius: 100 }} />
         </div>
         <div style={{ display: 'flex', gap: 4, marginTop: 8 }}>

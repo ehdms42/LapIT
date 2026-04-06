@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { RotateCcw, CheckCircle, XCircle, Info } from 'lucide-react'
 import { IONS, type Ion } from '../data/ions'
@@ -381,7 +381,9 @@ export default function IonicBonding() {
     drag.current = { uid: null, ion: null, ghostEl: null, offsetX: 0, offsetY: 0, fromPalette: false }
   }, [onMove, onUp])
 
-  cleanupRef.current = cleanup
+  useEffect(() => {
+    cleanupRef.current = cleanup
+  }, [cleanup])
 
   const onPaletteDragStart = useCallback((ion: Ion, e: React.PointerEvent) => {
     e.preventDefault()
